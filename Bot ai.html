@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Offline</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    #response {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      color: #333;
+      word-wrap: break-word;
+    }
+
+    #speak {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #speak:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Bot Suara</h1>
+    <button id="speak">Klik untuk Berbicara</button>
+    <div id="response"></div>
+  </div>
+
+  <script>
+    // Data Lokal untuk Pengetahuan AI
+    const knowledgeBase = {
+      "buka youtube": "Membuka YouTube...",
+      "buka whatsapp": "Membuka WhatsApp...",
+      "buka facebook": "Membuka Facebook...",
+      "buka instagram": "Membuka Instagram...",
+      "siapa namamu?": "Nama saya adalah Bot Suara.",
+      "apa kabar?": "Saya baik, terima kasih! Bagaimana dengan kamu?",
+      "tebak-tebakan": "Tebak, apa yang tidak bisa dipotong tapi bisa dirasakan? Jawabannya: Perasaan!",
+      "siapa presiden indonesia?": "Presiden Indonesia saat ini adalah Joko Widodo.",
+      "apa itu javascript?": "JavaScript adalah bahasa pemrograman yang digunakan untuk membuat halaman web interaktif.",
+      "apa itu html?": "HTML adalah bahasa markup yang digunakan untuk membuat struktur halaman web.",
+      "berapa umurmu?": "Saya adalah program komputer, jadi saya tidak memiliki umur."
+    };
+
+    // Fungsi untuk membuka aplikasi
+    function openApp(packageName) {
+      if (typeof Android !== "undefined" && Android.openApp) {
+        Android.openApp(packageName); // Integrasi dengan Android intent
+        return `Membuka aplikasi dengan package: ${packageName}`;
+      } else {
+        return "Perintah hanya dapat dijalankan di perangkat Android.";
+      }
+    }
+
+    // Fungsi untuk merespons perintah
+    function respondToCommand(command) {
+      command = command.toLowerCase();
+      let response;
+
+      if (knowledgeBase[command]) {
+        response = knowledgeBase[command];
+      } else {
+        response = "Maaf, saya tidak mengerti perintah itu.";
+      }
+
+      return response;
+    }
+
+    // Web Speech API: Mendengar Perintah
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "id-ID";
+
+    recognition.onresult = (event) => {
+      const command = event.results[0][0].transcript;
+      const response = respondToCommand(command);
+      document.getElementById("response").innerText = `Kamu: ${command}\nBot: ${response}`;
+      speak(response);
+    };
+
+    recognition.onerror = () => {
+      document.getElementById("response").innerText = "Gagal mendengar perintah.";
+    };
+
+    // Text-to-Speech: Membalas dengan Suara
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "id-ID";
+      speechSynthesis.speak(utterance);
+    }
+
+    // Tombol untuk mulai mendengar
+    document.getElementById("speak").addEventListener("click", () => {
+      recognition.start();
+    });
+  </script>
+
+</body>
+
+</html>
