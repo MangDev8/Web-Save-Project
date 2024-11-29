@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Bot Interaktif dengan TensorFlow.js</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <title>AI Bot Cerdas dengan TensorFlow.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> <!-- TensorFlow.js -->
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,21 +42,6 @@
       border-radius: 5px;
     }
 
-    #micBtn {
-      background-color: #1DB954;
-      color: white;
-      font-size: 1.5rem;
-      border: none;
-      padding: 15px 30px;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    #micBtn:hover {
-      background-color: #1ed760;
-    }
-
     .spectrum {
       width: 100%;
       height: 5px;
@@ -71,54 +56,34 @@
       width: 0;
       border-radius: 5px;
     }
-
-    .command-list {
-      margin-top: 30px;
-      font-size: 1rem;
-      color: #ddd;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .command-list div {
-      margin: 5px 0;
-      background-color: #555;
-      padding: 10px;
-      border-radius: 5px;
-    }
-
-    .command-list div:hover {
-      background-color: #666;
-    }
   </style>
 </head>
 <body>
-  <h1>AI Bot Interaktif dengan TensorFlow.js</h1>
+  <h1>AI Bot Cerdas dengan TensorFlow.js</h1>
   <div class="container">
     <div id="response">Katakan sesuatu!</div>
-    <button id="micBtn">🎤 Mulai Mendengar</button>
-
+    
     <!-- Visualisasi Spectrum -->
     <div class="spectrum">
       <div id="spectrumBar" class="spectrum-bar"></div>
     </div>
-
-    <!-- Daftar Perintah -->
-    <div class="command-list" id="commandList">
-      <div><strong>Perintah:</strong></div>
-      <div><i>"Buka YouTube"</i></div>
-      <div><i>"Siapa namamu?"</i></div>
-      <div><i>"Apa kabar?"</i></div>
-      <div><i>"Tebak-tebakan"</i></div>
-    </div>
   </div>
 
   <script>
-    // Fungsi untuk melatih model AI dengan TensorFlow.js
-    async function trainModel() {
+    // Data Lokal untuk Pengetahuan AI (Contoh Dataset)
+    const data = [
+      { input: "hai rin", output: "Baik, ada apa Master? Ada yang bisa saya bantu?" },
+      { input: "buka youtube", output: "Membuka YouTube..." },
+      { input: "apa kabar", output: "Saya baik, terima kasih! Bagaimana dengan kamu?" },
+      { input: "tebak-tebakan", output: "Tebak, apa yang tidak bisa dipotong tapi bisa dirasakan? Jawabannya: Perasaan!" }
+    ];
+
+    // Model TensorFlow.js untuk Klasifikasi Perintah
+    async function createModel() {
       const model = tf.sequential();
-      model.add(tf.layers.dense({units: 3, inputShape: [1], activation: 'relu'}));
-      model.add(tf.layers.dense({units: 3, activation: 'softmax'}));
+      model.add(tf.layers.dense({ units: 32, activation: 'relu', inputShape: [1] }));
+      model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+      model.add(tf.layers.dense({ units: 1, activation: 'softmax' }));
 
       model.compile({
         optimizer: 'adam',
@@ -126,76 +91,51 @@
         metrics: ['accuracy']
       });
 
-      // Data Latih: Perintah suara dan kelasnya
-      const xs = tf.tensor2d([0, 1, 2], [3, 1]); // Data input (misalnya, kode untuk 'buka youtube', 'siapa namamu?', dll)
-      const ys = tf.tensor2d([1, 0, 0], [3, 1]); // Kelas untuk setiap perintah (misalnya, perintah 1: buka youtube)
-
-      // Latih model
-      await model.fit(xs, ys, {epochs: 100});
-
       return model;
     }
 
-    // Fungsi untuk mendeteksi perintah
-    async function predictCommand(input) {
-      const model = await trainModel();  // Melatih model
-      const inputTensor = tf.tensor2d([input], [1, 1]);
-      const prediction = model.predict(inputTensor);
-
-      prediction.print();  // Menampilkan hasil prediksi
-
-      return prediction;
+    // Preprocessing Data (Membuat Vektor dari Teks)
+    function preprocessData(data) {
+      const inputs = data.map(item => tf.tensor([item.input.length]));
+      const outputs = data.map(item => item.output);
+      return { inputs, outputs };
     }
 
-    // Data Lokal untuk Pengetahuan AI
-    const knowledgeBase = {
-      "buka youtube": () => openApp("com.google.android.youtube"),
-      "siapa namamu?": "Nama saya adalah Bot Offline!",
-      "apa kabar?": "Saya baik, terima kasih! Bagaimana dengan kamu?",
-      "tebak-tebakan": "Tebak, apa yang tidak bisa dipotong tapi bisa dirasakan? Jawabannya: Perasaan!"
-    };
-
-    // Fungsi untuk membuka aplikasi (hanya akan bekerja di Android)
-    function openApp(packageName) {
-      if (typeof Android !== "undefined" && Android.openApp) {
-        Android.openApp(packageName); // Integrasi dengan Android intent
-        return `Membuka aplikasi dengan package: ${packageName}`;
-      } else {
-        return "Perintah hanya dapat dijalankan di perangkat Android.";
-      }
+    // Fungsi untuk Melatih Model
+    async function trainModel(model, data) {
+      const { inputs, outputs } = preprocessData(data);
+      await model.fit(inputs, outputs, { epochs: 5 });
     }
 
-    // Fungsi untuk menjawab perintah
-    function respondToCommand(command) {
-      command = command.toLowerCase();
-      let response;
-
-      if (knowledgeBase[command]) {
-        response = typeof knowledgeBase[command] === "function"
-          ? knowledgeBase[command]()
-          : knowledgeBase[command];
-      } else {
-        response = "Maaf, saya tidak mengerti perintah itu.";
-      }
-
-      return response;
+    // Fungsi untuk Menggunakan Model untuk Merespons Perintah
+    async function respondToCommand(command) {
+      const model = await createModel();
+      await trainModel(model, data);
+      
+      const input = tf.tensor([command.length]);
+      const prediction = model.predict(input);
+      const output = prediction.dataSync();
+      
+      // Menerjemahkan Output ke Respons yang Tepat
+      if (output[0] === 1) return "Baik, ada apa Master?";
+      if (output[1] === 1) return "Membuka YouTube...";
+      if (output[2] === 1) return "Saya baik, terima kasih!";
+      if (output[3] === 1) return "Tebak-tebakan!";
+      return "Perintah tidak dikenali.";
     }
 
     // Web Speech API: Mendengar Perintah
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "id-ID";
 
-    recognition.onresult = (event) => {
-      const command = event.results[0][0].transcript;
-      const response = respondToCommand(command);
+    recognition.onresult = async (event) => {
+      const command = event.results[0][0].transcript.toLowerCase();
+      const response = await respondToCommand(command);
       document.getElementById("response").innerText = `Kamu: ${command}\nBot: ${response}`;
       speak(response);
 
       // Menampilkan spectrum bar (untuk visualisasi suara)
       animateSpectrum();
-
-      // Menggunakan TensorFlow untuk memprediksi perintah
-      predictCommand(command);  // Prediksi perintah menggunakan model TensorFlow.js
     };
 
     recognition.onerror = () => {
@@ -209,10 +149,8 @@
       speechSynthesis.speak(utterance);
     }
 
-    // Fungsi untuk memulai mendengar
-    document.getElementById("micBtn").addEventListener("click", () => {
-      recognition.start();
-    });
+    // Fungsi untuk memulai mendengar secara otomatis
+    recognition.start();
 
     // Visualisasi Spectrum Suara
     function animateSpectrum() {
