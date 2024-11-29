@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Bot Cerdas dengan TensorFlow.js</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> <!-- TensorFlow.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script> <!-- CDN untuk Ikon Mic -->
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -56,6 +57,21 @@
       width: 0;
       border-radius: 5px;
     }
+
+    #micButton {
+      background-color: #1DB954;
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #micButton:hover {
+      background-color: #1ed760;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +83,11 @@
     <div class="spectrum">
       <div id="spectrumBar" class="spectrum-bar"></div>
     </div>
+
+    <!-- Tombol Mic -->
+    <button id="micButton">
+      <i class="fas fa-microphone"></i>
+    </button>
   </div>
 
   <script>
@@ -159,7 +180,12 @@
     }
 
     // Fungsi untuk memulai mendengar secara otomatis
-    recognition.start();
+    function startListening() {
+      recognition.start();
+    }
+
+    // Tombol Mic untuk Mulai Mendengarkan secara Manual
+    document.getElementById("micButton").addEventListener("click", startListening);
 
     // Visualisasi Spectrum Suara
     function animateSpectrum() {
@@ -175,6 +201,9 @@
         }
       }, 100);
     }
+
+    // Mulai mendengarkan otomatis ketika halaman dimuat
+    recognition.start();
   </script>
 </body>
 </html>
