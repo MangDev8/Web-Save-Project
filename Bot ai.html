@@ -3,198 +3,193 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Bot Cerdas dengan TensorFlow.js</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script> <!-- TensorFlow.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script> <!-- CDN untuk Ikon Mic -->
+  <title>AI Chat Bot</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #181818;
-      color: white;
-      margin: 0;
-      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      margin: 0;
+      padding: 0;
     }
 
     h1 {
-      text-align: center;
-      font-size: 2rem;
+      font-size: 2.5rem;
+      color: #333;
+    }
+
+    .chat-container {
+      width: 80%;
+      max-width: 600px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 80vh;
+      overflow-y: auto;
+    }
+
+    #chat {
+      width: 100%;
+      max-height: 500px;
+      overflow-y: auto;
       margin-bottom: 20px;
     }
 
-    .container {
-      width: 80%;
-      max-width: 600px;
-      background-color: #333;
+    .message {
+      padding: 10px;
+      margin: 5px;
       border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      max-width: 80%;
+      word-wrap: break-word;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
-    #response {
+    .user-message {
+      background-color: #1DB954;
+      color: white;
+      align-self: flex-end;
+    }
+
+    .bot-message {
+      background-color: #f1f1f1;
+      color: #333;
+      align-self: flex-start;
+    }
+
+    #micBtn {
+      background-color: #1DB954;
+      color: white;
+      padding: 15px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.5rem;
+      border: none;
+      transition: background-color 0.3s;
+    }
+
+    #micBtn:hover {
+      background-color: #1ed760;
+    }
+
+    .loading {
       font-size: 1.2rem;
-      margin: 20px 0;
-      padding: 10px;
-      background-color: #444;
-      border-radius: 5px;
+      color: #1DB954;
+      font-weight: bold;
     }
 
     .spectrum {
       width: 100%;
       height: 5px;
-      background-color: #444;
-      margin-top: 20px;
+      background-color: #ddd;
       border-radius: 5px;
+      margin-top: 10px;
     }
 
     .spectrum-bar {
       height: 100%;
-      background-color: #1DB954;
       width: 0;
-      border-radius: 5px;
-    }
-
-    #micButton {
       background-color: #1DB954;
-      color: white;
-      border: none;
-      padding: 15px;
-      border-radius: 50%;
-      font-size: 24px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
-
-    #micButton:hover {
-      background-color: #1ed760;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>AI Bot Cerdas dengan TensorFlow.js</h1>
-  <div class="container">
-    <div id="response">Katakan sesuatu!</div>
-    
-    <!-- Visualisasi Spectrum -->
-    <div class="spectrum">
+
+  <h1>AI Chat Bot</h1>
+  <div class="chat-container">
+    <div id="chat"></div>
+    <button id="micBtn">🎤</button>
+    <div id="spectrum" class="spectrum">
       <div id="spectrumBar" class="spectrum-bar"></div>
     </div>
-
-    <!-- Tombol Mic -->
-    <button id="micButton">
-      <i class="fas fa-microphone"></i>
-    </button>
   </div>
 
   <script>
-    // Data Lokal untuk Pengetahuan AI (Contoh Dataset)
-    const data = [
-      { input: "hai rin", output: "Baik, ada apa Master? Ada yang bisa saya bantu?" },
-      { input: "buka youtube", output: "Membuka YouTube..." },
-      { input: "apa kabar", output: "Saya baik, terima kasih! Bagaimana dengan kamu?" },
-      { input: "tebak-tebakan", output: "Tebak, apa yang tidak bisa dipotong tapi bisa dirasakan? Jawabannya: Perasaan!" }
-    ];
+    const openAIKey = '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'; // Ganti dengan API Key Anda
 
-    // Model TensorFlow.js untuk Klasifikasi Perintah
-    async function createModel() {
-      const model = tf.sequential();
-      model.add(tf.layers.dense({ units: 32, activation: 'relu', inputShape: [1] }));
-      model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-      model.add(tf.layers.dense({ units: 1, activation: 'softmax' }));
+    const micBtn = document.getElementById('micBtn');
+    const chatContainer = document.getElementById('chat');
+    const spectrumBar = document.getElementById('spectrumBar');
 
-      model.compile({
-        optimizer: 'adam',
-        loss: 'categoricalCrossentropy',
-        metrics: ['accuracy']
-      });
-
-      return model;
-    }
-
-    // Preprocessing Data (Membuat Vektor dari Teks)
-    function preprocessData(data) {
-      const inputs = data.map(item => tf.tensor([item.input.length]));
-      const outputs = data.map(item => item.output);
-      return { inputs, outputs };
-    }
-
-    // Fungsi untuk Melatih Model
-    async function trainModel(model, data) {
-      const { inputs, outputs } = preprocessData(data);
-      await model.fit(inputs, outputs, { epochs: 5 });
-    }
-
-    // Fungsi untuk Menggunakan Model untuk Merespons Perintah
-    async function respondToCommand(command) {
-      const model = await createModel();
-      await trainModel(model, data);
-      
-      const input = tf.tensor([command.length]);
-      const prediction = model.predict(input);
-      const output = prediction.dataSync();
-      
-      // Menerjemahkan Output ke Respons yang Tepat
-      if (output[0] === 1) return "Baik, ada apa Master?";
-      if (output[1] === 1) return "Membuka YouTube...";
-      if (output[2] === 1) return "Saya baik, terima kasih!";
-      if (output[3] === 1) return "Tebak-tebakan!";
-      return "Perintah tidak dikenali.";
-    }
-
-    // Web Speech API: Mendengar Perintah
+    // Web Speech API untuk Speech Recognition
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "id-ID";
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
     recognition.onresult = async (event) => {
-      const command = event.results[0][0].transcript.toLowerCase();
-      const responseElement = document.getElementById("response");
+      const command = event.results[event.results.length - 1][0].transcript;
+      updateChat('user', command);
 
-      // Cek apakah perintah mengandung nama 'Rin'
-      if (command.includes("rin")) {
-        const response = "Baik, ada apa Master? Ada yang bisa saya bantu?";
-        responseElement.innerText = `Kamu: ${command}\nBot: ${response}`;
-        speak(response);
-      } else {
-        const response = await respondToCommand(command);
-        responseElement.innerText = `Kamu: ${command}\nBot: ${response}`;
-        speak(response);
-      }
-
-      // Menampilkan spectrum bar (untuk visualisasi suara)
+      // Mengirimkan perintah ke ChatGPT untuk respons
+      const response = await getResponseFromChatGPT(command);
+      updateChat('bot', response);
+      speak(response);
       animateSpectrum();
     };
 
     recognition.onerror = () => {
-      document.getElementById("response").innerText = "Gagal mendengar perintah.";
+      updateChat('bot', 'Maaf, saya tidak mendengar dengan jelas.');
     };
 
-    // Text-to-Speech: Membalas dengan Suara
+    // Fungsi untuk berbicara (text-to-speech)
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "id-ID";
+      utterance.lang = 'id-ID';
       speechSynthesis.speak(utterance);
     }
 
-    // Fungsi untuk memulai mendengar secara otomatis
-    function startListening() {
-      recognition.start();
+    // Fungsi untuk mengupdate tampilan chat
+    function updateChat(sender, message) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+      messageElement.textContent = message;
+      chatContainer.appendChild(messageElement);
+      chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll ke bawah
     }
 
-    // Tombol Mic untuk Mulai Mendengarkan secara Manual
-    document.getElementById("micButton").addEventListener("click", startListening);
+    // Fungsi untuk mengirim permintaan ke ChatGPT
+    async function getResponseFromChatGPT(prompt) {
+      try {
+        const response = await fetch('https://api.openai.com/v1/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openAIKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo', 
+            prompt: prompt,
+            max_tokens: 150
+          })
+        });
 
-    // Visualisasi Spectrum Suara
+        const data = await response.json();
+        return data.choices[0].text.trim();
+      } catch (error) {
+        console.error('Error:', error);
+        return 'Maaf, terjadi kesalahan.';
+      }
+    }
+
+    // Fungsi untuk mulai mendengarkan
+    micBtn.addEventListener('click', () => {
+      recognition.start();
+    });
+
+    // Visualisasi Spectrum
     function animateSpectrum() {
-      const spectrumBar = document.getElementById("spectrumBar");
       let width = 0;
-
-      // Menggerakkan spectrum bar untuk efek visual
       const interval = setInterval(() => {
-        width = Math.random() * 100; // Membuat lebar bar random untuk efek suara
+        width = Math.random() * 100;
         spectrumBar.style.width = width + "%";
         if (width === 0) {
           clearInterval(interval);
@@ -202,8 +197,7 @@
       }, 100);
     }
 
-    // Mulai mendengarkan otomatis ketika halaman dimuat
-    recognition.start();
   </script>
+
 </body>
 </html>
