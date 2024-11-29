@@ -130,9 +130,18 @@
 
     recognition.onresult = async (event) => {
       const command = event.results[0][0].transcript.toLowerCase();
-      const response = await respondToCommand(command);
-      document.getElementById("response").innerText = `Kamu: ${command}\nBot: ${response}`;
-      speak(response);
+      const responseElement = document.getElementById("response");
+
+      // Cek apakah perintah mengandung nama 'Rin'
+      if (command.includes("rin")) {
+        const response = "Baik, ada apa Master? Ada yang bisa saya bantu?";
+        responseElement.innerText = `Kamu: ${command}\nBot: ${response}`;
+        speak(response);
+      } else {
+        const response = await respondToCommand(command);
+        responseElement.innerText = `Kamu: ${command}\nBot: ${response}`;
+        speak(response);
+      }
 
       // Menampilkan spectrum bar (untuk visualisasi suara)
       animateSpectrum();
