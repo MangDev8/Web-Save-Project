@@ -1,85 +1,161 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot Offline</title>
+  <title>AI Bot Interaktif dengan TensorFlow.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
+      background-color: #181818;
+      color: white;
       margin: 0;
       padding: 0;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 50px auto;
-      padding: 20px;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
 
     h1 {
       text-align: center;
-      color: #333;
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      width: 80%;
+      max-width: 600px;
+      background-color: #333;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
     #response {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f0f0f0;
+      font-size: 1.2rem;
+      margin: 20px 0;
+      padding: 10px;
+      background-color: #444;
       border-radius: 5px;
-      color: #333;
-      word-wrap: break-word;
     }
 
-    #speak {
-      display: block;
-      width: 100%;
-      padding: 15px;
-      background-color: #4CAF50;
+    #micBtn {
+      background-color: #1DB954;
       color: white;
-      font-size: 18px;
+      font-size: 1.5rem;
       border: none;
-      border-radius: 5px;
+      padding: 15px 30px;
+      border-radius: 50%;
       cursor: pointer;
-      margin-top: 20px;
+      transition: background-color 0.3s;
     }
 
-    #speak:hover {
-      background-color: #45a049;
+    #micBtn:hover {
+      background-color: #1ed760;
+    }
+
+    .spectrum {
+      width: 100%;
+      height: 5px;
+      background-color: #444;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
+
+    .spectrum-bar {
+      height: 100%;
+      background-color: #1DB954;
+      width: 0;
+      border-radius: 5px;
+    }
+
+    .command-list {
+      margin-top: 30px;
+      font-size: 1rem;
+      color: #ddd;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .command-list div {
+      margin: 5px 0;
+      background-color: #555;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .command-list div:hover {
+      background-color: #666;
     }
   </style>
 </head>
-
 <body>
-
+  <h1>AI Bot Interaktif dengan TensorFlow.js</h1>
   <div class="container">
-    <h1>Bot Suara</h1>
-    <button id="speak">Klik untuk Berbicara</button>
-    <div id="response"></div>
+    <div id="response">Katakan sesuatu!</div>
+    <button id="micBtn">🎤 Mulai Mendengar</button>
+
+    <!-- Visualisasi Spectrum -->
+    <div class="spectrum">
+      <div id="spectrumBar" class="spectrum-bar"></div>
+    </div>
+
+    <!-- Daftar Perintah -->
+    <div class="command-list" id="commandList">
+      <div><strong>Perintah:</strong></div>
+      <div><i>"Buka YouTube"</i></div>
+      <div><i>"Siapa namamu?"</i></div>
+      <div><i>"Apa kabar?"</i></div>
+      <div><i>"Tebak-tebakan"</i></div>
+    </div>
   </div>
 
   <script>
+    // Fungsi untuk melatih model AI dengan TensorFlow.js
+    async function trainModel() {
+      const model = tf.sequential();
+      model.add(tf.layers.dense({units: 3, inputShape: [1], activation: 'relu'}));
+      model.add(tf.layers.dense({units: 3, activation: 'softmax'}));
+
+      model.compile({
+        optimizer: 'adam',
+        loss: 'categoricalCrossentropy',
+        metrics: ['accuracy']
+      });
+
+      // Data Latih: Perintah suara dan kelasnya
+      const xs = tf.tensor2d([0, 1, 2], [3, 1]); // Data input (misalnya, kode untuk 'buka youtube', 'siapa namamu?', dll)
+      const ys = tf.tensor2d([1, 0, 0], [3, 1]); // Kelas untuk setiap perintah (misalnya, perintah 1: buka youtube)
+
+      // Latih model
+      await model.fit(xs, ys, {epochs: 100});
+
+      return model;
+    }
+
+    // Fungsi untuk mendeteksi perintah
+    async function predictCommand(input) {
+      const model = await trainModel();  // Melatih model
+      const inputTensor = tf.tensor2d([input], [1, 1]);
+      const prediction = model.predict(inputTensor);
+
+      prediction.print();  // Menampilkan hasil prediksi
+
+      return prediction;
+    }
+
     // Data Lokal untuk Pengetahuan AI
     const knowledgeBase = {
-      "buka youtube": "Membuka YouTube...",
-      "buka whatsapp": "Membuka WhatsApp...",
-      "buka facebook": "Membuka Facebook...",
-      "buka instagram": "Membuka Instagram...",
-      "siapa namamu?": "Nama saya adalah Bot Suara.",
+      "buka youtube": () => openApp("com.google.android.youtube"),
+      "siapa namamu?": "Nama saya adalah Bot Offline!",
       "apa kabar?": "Saya baik, terima kasih! Bagaimana dengan kamu?",
-      "tebak-tebakan": "Tebak, apa yang tidak bisa dipotong tapi bisa dirasakan? Jawabannya: Perasaan!",
-      "siapa presiden indonesia?": "Presiden Indonesia saat ini adalah Joko Widodo.",
-      "apa itu javascript?": "JavaScript adalah bahasa pemrograman yang digunakan untuk membuat halaman web interaktif.",
-      "apa itu html?": "HTML adalah bahasa markup yang digunakan untuk membuat struktur halaman web.",
-      "berapa umurmu?": "Saya adalah program komputer, jadi saya tidak memiliki umur."
+      "tebak-tebakan": "Tebak, apa yang tidak bisa dipotong tapi bisa dirasakan? Jawabannya: Perasaan!"
     };
 
-    // Fungsi untuk membuka aplikasi
+    // Fungsi untuk membuka aplikasi (hanya akan bekerja di Android)
     function openApp(packageName) {
       if (typeof Android !== "undefined" && Android.openApp) {
         Android.openApp(packageName); // Integrasi dengan Android intent
@@ -89,13 +165,15 @@
       }
     }
 
-    // Fungsi untuk merespons perintah
+    // Fungsi untuk menjawab perintah
     function respondToCommand(command) {
       command = command.toLowerCase();
       let response;
 
       if (knowledgeBase[command]) {
-        response = knowledgeBase[command];
+        response = typeof knowledgeBase[command] === "function"
+          ? knowledgeBase[command]()
+          : knowledgeBase[command];
       } else {
         response = "Maaf, saya tidak mengerti perintah itu.";
       }
@@ -112,6 +190,12 @@
       const response = respondToCommand(command);
       document.getElementById("response").innerText = `Kamu: ${command}\nBot: ${response}`;
       speak(response);
+
+      // Menampilkan spectrum bar (untuk visualisasi suara)
+      animateSpectrum();
+
+      // Menggunakan TensorFlow untuk memprediksi perintah
+      predictCommand(command);  // Prediksi perintah menggunakan model TensorFlow.js
     };
 
     recognition.onerror = () => {
@@ -125,12 +209,25 @@
       speechSynthesis.speak(utterance);
     }
 
-    // Tombol untuk mulai mendengar
-    document.getElementById("speak").addEventListener("click", () => {
+    // Fungsi untuk memulai mendengar
+    document.getElementById("micBtn").addEventListener("click", () => {
       recognition.start();
     });
+
+    // Visualisasi Spectrum Suara
+    function animateSpectrum() {
+      const spectrumBar = document.getElementById("spectrumBar");
+      let width = 0;
+
+      // Menggerakkan spectrum bar untuk efek visual
+      const interval = setInterval(() => {
+        width = Math.random() * 100; // Membuat lebar bar random untuk efek suara
+        spectrumBar.style.width = width + "%";
+        if (width === 0) {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
   </script>
-
 </body>
-
 </html>
